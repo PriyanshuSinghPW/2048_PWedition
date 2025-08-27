@@ -1,7 +1,8 @@
 function Tile(position, value) {
   this.x                = position.x;
   this.y                = position.y;
-  this.value            = value || 2;
+  // value now represents an index into a progression array (0 = first stage)
+  this.value            = (typeof value !== 'undefined') ? value : 0;
 
   this.previousPosition = null;
   this.mergedFrom       = null; // Tracks tiles that merged together

@@ -13,6 +13,13 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
   this.setup();
 }
 
+// Default progression stages — editable to create different mods
+// Each entry is a label for that stage. Tiles store an index into this array.
+var PROGRESSION = [
+  "Cell", "Tissue", "Organ", "Organ System", "Organism",
+  "Population", "Community", "Ecosystem", "Biome", "Biosphere", "Life Web"
+];
+
 // Restart the game
 GameManager.prototype.restart = function () {
   this.storageManager.clearGameState();
@@ -68,8 +75,9 @@ GameManager.prototype.addStartTiles = function () {
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
-    var value = Math.random() < 0.9 ? 2 : 4;
-    var tile = new Tile(this.grid.randomAvailableCell(), value);
+  // New tiles start at the first progression stage (index 0). Occasionally start at index 1.
+  var index = Math.random() < 0.9 ? 0 : 1;
+  var tile = new Tile(this.grid.randomAvailableCell(), index);
 
     this.grid.insertTile(tile);
   }
@@ -154,7 +162,9 @@ GameManager.prototype.move = function (direction) {
 
         // Only one merger per row traversal?
         if (next && next.value === tile.value && !next.mergedFrom) {
-          var merged = new Tile(positions.next, tile.value * 2);
+          // Advance to the next stage index (cap at end of progression)
+          var nextIndex = Math.min(tile.value + 1, PROGRESSION.length - 1);
+          var merged = new Tile(positions.next, nextIndex);
           merged.mergedFrom = [tile, next];
 
           self.grid.insertTile(merged);
@@ -163,11 +173,12 @@ GameManager.prototype.move = function (direction) {
           // Converge the two tiles' positions
           tile.updatePosition(positions.next);
 
-          // Update the score
-          self.score += merged.value;
+          // Update the score (award points based on progression level)
+          // Here each stage gives (index+1)*10 points — change as desired
+          self.score += (nextIndex + 1) * 10;
 
-          // The mighty 2048 tile
-          if (merged.value === 2048) self.won = true;
+          // If we've reached the final progression stage, mark as won
+          if (nextIndex === PROGRESSION.length - 1) self.won = true;
         } else {
           self.moveTile(tile, positions.farthest);
         }

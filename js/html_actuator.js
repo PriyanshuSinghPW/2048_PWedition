@@ -51,10 +51,13 @@ HTMLActuator.prototype.addTile = function (tile) {
 
   var wrapper   = document.createElement("div");
   var inner     = document.createElement("div");
+  var front     = document.createElement("div");
+  var back      = document.createElement("div");
   var position  = tile.previousPosition || { x: tile.x, y: tile.y };
   var positionClass = this.positionClass(position);
 
   // We can't use classlist because it somehow glitches when replacing classes
+  // Use tile-value index class (e.g. tile-0, tile-1)
   var classes = ["tile", "tile-" + tile.value, positionClass];
 
   if (tile.value > 2048) classes.push("tile-super");
@@ -62,7 +65,23 @@ HTMLActuator.prototype.addTile = function (tile) {
   this.applyClasses(wrapper, classes);
 
   inner.classList.add("tile-inner");
-  inner.textContent = tile.value;
+
+  // Choose label: if PROGRESSION exists, use it as a label map; otherwise show numeric
+  var label = (typeof PROGRESSION !== 'undefined' && PROGRESSION[tile.value]) ? PROGRESSION[tile.value] : tile.value;
+
+  // Optional emoji map for visual flair
+  var EMOJI_MAP = (typeof EMOJI_MAP !== 'undefined') ? EMOJI_MAP : {
+    0: "🧬", 1: "🧫", 2: "🫀", 3: "🧠", 4: "🧍", 5: "👥", 6: "👪", 7: "🌳", 8: "🏜️", 9: "🌍", 10: "🌐"
+  };
+
+  front.classList.add("tile-front");
+  front.textContent = label;
+
+  back.classList.add("tile-back");
+  back.textContent = EMOJI_MAP[tile.value] || "❓";
+
+  inner.appendChild(front);
+  inner.appendChild(back);
 
   if (tile.previousPosition) {
     // Make sure that the tile gets rendered in the previous position first
@@ -85,6 +104,11 @@ HTMLActuator.prototype.addTile = function (tile) {
 
   // Add the inner part of the tile to the wrapper
   wrapper.appendChild(inner);
+
+  // Flip on click to reveal emoji (optional interaction)
+  wrapper.addEventListener('click', function () {
+    wrapper.classList.toggle('flipped');
+  });
 
   // Put the tile on the board
   this.tileContainer.appendChild(wrapper);
